@@ -36,7 +36,7 @@ type FormContextType = {
 const defaultData: ApplicationData = {
   type: "personal",
   accountTypeId: "",
-  applicationId: crypto.randomUUID().substring(0, 8),
+  applicationId: "",
   attestation: {
     agreedToTerms: false,
     signatureName: "",
@@ -317,7 +317,7 @@ export function FormProvider({ children }: { children: ReactNode }) {
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
   const setStep = (step: number) => setCurrentStep(step);
   const setType = (type: ApplicationType) => {
-    setData({ ...defaultData, type, applicationId: crypto.randomUUID().substring(0, 8) });
+    setData({ ...defaultData, type, applicationId: "" });
     setCurrentStep(1);
   };
 

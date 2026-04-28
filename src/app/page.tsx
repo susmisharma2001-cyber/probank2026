@@ -15,7 +15,7 @@ import Image from "next/image";
 
 function ApplicationLayout() {
   const { toast } = useToast();
-  const { currentStep, totalSteps, nextStep, prevStep, data, setType, steps, canContinue } = useForm();
+  const { currentStep, totalSteps, nextStep, prevStep, data, updateData, setType, steps, canContinue } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
@@ -25,7 +25,7 @@ function ApplicationLayout() {
     4: "ACTIVITY (EXPECTED TRANSFER ACTIVITY)",
     5: "WEALTH (SOURCE OF FUNDS)",
     6: "BANKING DETAILS",
-    7: "FEE BANK / RECOMMENDING BANK",
+    7: "FEE BANK",
     8: "ACCOUNT OPENING FEE & PAYMENT INSTRUCTIONS",
     9: "REVIEW",
   };
@@ -112,8 +112,13 @@ function ApplicationLayout() {
 
       const summary = await generateApplicationSummary(payloadSummary);
 
+      const applicationId = data.applicationId || crypto.randomUUID().substring(0, 8);
+      if (!data.applicationId) {
+        updateData({ applicationId });
+      }
+
       const formBody = new FormData();
-      formBody.append("applicationId", data.applicationId);
+      formBody.append("applicationId", applicationId);
       formBody.append("type", data.type);
       formBody.append("accountTypeId", data.accountTypeId);
       formBody.append("emailSubject", summary.subject);
@@ -150,22 +155,17 @@ function ApplicationLayout() {
       if (data.companyRegFile instanceof File) formBody.append("companyRegFile", data.companyRegFile);
 
       const getApiUrl = () => {
-        const defaultApiUrl = "http://3.14.204.157";
-        const runtimeApiUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const envApiUrl = process.env.NEXT_PUBLIC_FAAP_API_URL?.replace(/\/$/, '');
-        const isLocalDevelopment = typeof window !== 'undefined' && (
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          process.env.NODE_ENV === 'development'
-        );
+        const runtimeApiUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
         if (envApiUrl) return envApiUrl;
-        if (isLocalDevelopment) return defaultApiUrl;
-        return runtimeApiUrl || defaultApiUrl;
+        if (runtimeApiUrl) return runtimeApiUrl;
+        return "";
       };
 
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/wp-json/faap/v1/submit`, {
+      const endpoint = apiUrl ? `${apiUrl.replace(/\/$/, '')}/wp-json/faap/v1/submit` : "/wp-json/faap/v1/submit";
+      const response = await fetch(endpoint, {
         method: "POST",
         body: formBody,
       });
@@ -316,26 +316,37 @@ function ApplicationLayout() {
         </div>
       </div>
 
-      <div className="bg-[#0a192f] px-6 md:px-12 sticky top-0 z-40 border-t border-white/5">
-        <div className="max-w-4xl mx-auto flex">
-          <button 
-            onClick={() => setType('personal')}
-            className={cn(
-              "px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] transition-all relative",
-              data.type === 'personal' ? "text-[#c29d45] border-b-2 border-[#c29d45]" : "text-white/40 hover:text-white"
-            )}
-          >
-            Personal Account
-          </button>
-          <button 
-            onClick={() => setType('business')}
-            className={cn(
-              "px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] transition-all relative",
-              data.type === 'business' ? "text-[#c29d45] border-b-2 border-[#c29d45]" : "text-white/40 hover:text-white"
-            )}
-          >
-            Business Account
-          </button>
+      <div className="bg-[#0a192f] px-4 md:px-12 sticky top-0 z-40 border-t border-white/5 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
+        <div className="max-w-5xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
+          <div className="text-sm font-semibold uppercase tracking-[0.32em] text-slate-300">
+            Choose your application type
+          </div>
+          <div className="flex w-full sm:w-auto gap-3 rounded-[32px] border border-white/10 bg-white/5 p-1 shadow-[0_20px_60px_-45px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+            <button
+              onClick={() => setType('personal')}
+              className={cn(
+                "w-full min-w-[170px] rounded-[28px] px-6 py-4 text-base font-semibold uppercase tracking-[0.18em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29d45]",
+                data.type === 'personal'
+                  ? "bg-[#c29d45] text-[#0a192f] shadow-[0_10px_30px_-20px_rgba(194,157,69,0.9)]"
+                  : "bg-transparent text-slate-200 hover:text-white hover:bg-white/10"
+              )}
+              aria-pressed={data.type === 'personal'}
+            >
+              Personal Account
+            </button>
+            <button
+              onClick={() => setType('business')}
+              className={cn(
+                "w-full min-w-[170px] rounded-[28px] px-6 py-4 text-base font-semibold uppercase tracking-[0.18em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29d45]",
+                data.type === 'business'
+                  ? "bg-[#c29d45] text-[#0a192f] shadow-[0_10px_30px_-20px_rgba(194,157,69,0.9)]"
+                  : "bg-transparent text-slate-200 hover:text-white hover:bg-white/10"
+              )}
+              aria-pressed={data.type === 'business'}
+            >
+              Business Account
+            </button>
+          </div>
         </div>
       </div>
 
@@ -448,7 +459,7 @@ function ApplicationLayout() {
           
           <footer className="py-8 text-center px-4">
             <p className="text-[10px] uppercase tracking-widest text-[#94a3b8] font-bold leading-loose max-w-4xl mx-auto">
-              PROMINENCE BANK IS GOVERNED UNDER THE ETNO DIPLOMATIC REGULATORY FRAMEWORK • SECURE APPLICATION PROTOCOL V4.5
+              PROMINENCE BANK IS GOVERNED UNDER THE ETMO DIPLOMATIC REGULATORY FRAMEWORK • SECURE APPLICATION PROTOCOL V4.5
             </p>
           </footer>
         </div>

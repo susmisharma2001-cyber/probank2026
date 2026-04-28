@@ -1151,6 +1151,17 @@ export function StepRenderer() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {activeStepData.fields.map((field: any) => {
+          if (field.type === 'section') {
+            return (
+              <div key={field.id} className="md:col-span-2 pt-6">
+                <div className="border-b border-slate-200 pb-3 mb-2">
+                  <h3 className="text-lg font-semibold uppercase tracking-wide text-[#0a192f]">{field.label}</h3>
+                  {field.description && <p className="mt-1 text-sm text-slate-500">{field.description}</p>}
+                </div>
+              </div>
+            );
+          }
+
           const fieldValue = data[field.name] || "";
           const fieldError = getFieldError(field, fieldValue, data);
           return (
