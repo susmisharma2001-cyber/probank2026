@@ -30,6 +30,8 @@ To run this portal, you need **two environments** working together:
 2.  **Install Engine**: Run `npm install`. This creates the `node_modules` folder.
 3.  **Set AI Key**: Create a `.env` file and add your `GOOGLE_GENAI_API_KEY`.
 4.  **Set API URL**: Add `NEXT_PUBLIC_FAAP_API_URL=http://your-wordpress-site` to `.env` (for WP endpoint requests).
+    - Example: `NEXT_PUBLIC_FAAP_API_URL=https://prominencebank.com`
+    - This must point to the WordPress host where `wp-json/faap/v1` is available.
 5.  **Start Service**: Run `npm run build` then `npm start`. Note the URL (e.g., `http://your-server-ip:9002`).
 
 ### Step 2: Install the WordPress Plugin (PHP)

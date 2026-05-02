@@ -165,6 +165,7 @@ function ApplicationLayout() {
 
       const apiUrl = getApiUrl();
       const endpoint = apiUrl ? `${apiUrl.replace(/\/$/, '')}/wp-json/faap/v1/submit` : "/wp-json/faap/v1/submit";
+      console.info("FAAP submit endpoint:", endpoint);
       const response = await fetch(endpoint, {
         method: "POST",
         body: formBody,
@@ -231,7 +232,11 @@ function ApplicationLayout() {
         if (error.message.includes("Invalid server response")) {
           errorDescription = "The server returned an invalid response. This may be a temporary issue. Please try again in a few moments.";
         } else if (error.message.includes("Failed to fetch")) {
-          errorDescription = "Unable to reach the server. Please check your internet connection and try again.";
+          if (!process.env.NEXT_PUBLIC_FAAP_API_URL) {
+            errorDescription = "Unable to reach the backend API. Please set NEXT_PUBLIC_FAAP_API_URL in your .env to your WordPress site URL.";
+          } else {
+            errorDescription = "Unable to reach the server. Please check your internet connection and try again.";
+          }
         } else if (error.message.includes("timeout")) {
           errorDescription = "Request timed out. Please try again.";
         } else {
