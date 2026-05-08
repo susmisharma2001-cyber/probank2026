@@ -87,18 +87,28 @@ function faap_admin_menu() {
     add_submenu_page('faap-applications', 'Manage Forms', 'Manage Forms', 'manage_options', 'faap-forms', 'faap_admin_manage_forms');
 }
 
-add_filter('rest_pre_serve_request', function($value) {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
-    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept, Origin, X-Requested-With');
-    header('Access-Control-Allow-Credentials: true');
-
-    // Handle preflight OPTIONS requests
-    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-        header('Access-Control-Max-Age: 86400'); // Cache preflight for 24 hours
-        exit(0);
+function faap_send_cors_headers() {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (!empty($origin)) {
+        header('Access-Control-Allow-Origin: ' . esc_url_raw($origin));
+        header('Access-Control-Allow-Credentials: true');
+    } else {
+        header('Access-Control-Allow-Origin: *');
     }
 
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept, Origin, X-Requested-With');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header('Access-Control-Max-Age: 86400');
+        status_header(200);
+        exit(0);
+    }
+}
+
+add_action('init', 'faap_send_cors_headers');
+add_filter('rest_pre_serve_request', function($value) {
+    faap_send_cors_headers();
     return $value;
 });
 
@@ -183,7 +193,7 @@ function faap_get_data_image_src($value) {
         return null;
     }
 
-    if (preg_match('/(data:image\/([^;]+);base64,([A-Za-z0-9+\/=]+))/', $value, $matches)) {
+    if (preg_match('/^(data:image\/([^;]+);base64,([A-Za-z0-9+\/=]+))$/', $value, $matches)) {
         // Try to save the base64 image to a file and return the file URL
         $full_data_uri = $matches[1];
         $image_type = $matches[2];
@@ -238,6 +248,11 @@ function faap_get_data_image_src($value) {
             error_log('FAAP: Failed to save signature file to: ' . $file_path . ' (permissions: ' . substr(sprintf('%o', fileperms(dirname($file_path))), -4) . ')');
             return $full_data_uri; // Fallback to data URI
         }
+    }
+
+    $upload_dir = wp_upload_dir();
+    if (!empty($upload_dir['baseurl']) && strpos($value, $upload_dir['baseurl']) === 0) {
+        return $value;
     }
 
     error_log('FAAP: No base64 data URI found in signature value');
@@ -990,7 +1005,14 @@ function faap_handle_submission($request) {
             }
         }
 
-        $form_data_json = wp_json_encode($params);
+        $form_data_json = wp_json_encode($params, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        if ($form_data_json === false) {
+            $json_error = function_exists('wp_json_last_error_msg') ? wp_json_last_error_msg() : (function_exists('json_last_error_msg') ? json_last_error_msg() : 'Unknown JSON error');
+            error_log('FAAP: JSON encode failed: ' . $json_error . ' ; JSON code: ' . json_last_error());
+            return new WP_Error('json_encode_error', 'Unable to encode application data.');
+        }
+
+        error_log('FAAP: Saving application with applicationId=' . $params['applicationId'] . ' type=' . $params['type'] . ' accountTypeId=' . $params['accountTypeId']);
         $inserted = $wpdb->insert($table_apps, [
             'type' => $params['type'],
             'account_type_id' => $params['accountTypeId'],
@@ -1000,6 +1022,7 @@ function faap_handle_submission($request) {
         ]);
 
         if (!$inserted) {
+            error_log('FAAP: Failed to save application. DB error: ' . $wpdb->last_error . ' ; last query: ' . $wpdb->last_query);
             return new WP_Error('db_err', 'Failed to save application.');
         }
 

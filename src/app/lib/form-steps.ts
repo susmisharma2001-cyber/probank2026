@@ -78,7 +78,7 @@ export const PERSONAL_STEPS: FormStep[] = [
       { id: "f25", label: "Estimated number of incoming transfers per month", name: "incomingCount", type: "number", width: "half" },
       { id: "f26", label: "Average value for each transfer", name: "avgValue", type: "text", width: "half", numericOnly: true },
       { id: "f27", label: "Maximum value of each transfer", name: "maxValue", type: "text", width: "half", numericOnly: true },
-      { id: "f28", label: "Currency of initial funding", name: "fundingCurrency", type: "text", width: "half" },
+      { id: "f28", label: "Currency of initial funding", name: "fundingCurrency", type: "select", options: ["USD", "EUR"], width: "half" },
     ]
   },
   {
@@ -87,7 +87,7 @@ export const PERSONAL_STEPS: FormStep[] = [
     title: "WEALTH",
     description: "Source of initial funding:",
     fields: [
-      { id: "f29", label: "Value of Initial Funding", name: "fundingValue", type: "text", width: "half", numericOnly: true },
+      { id: "f29", label: "Value of Initial Funding", name: "fundingValue", type: "text", width: "half", numericOnly: true, required: true },
       { id: "f30", label: "Originating Bank Name", name: "fundingBank", type: "text", width: "half" },
       { id: "f31", label: "Originating Bank Address", name: "fundingBankAddr", type: "text", width: "full" },
       { id: "f32", label: "Account Name", name: "fundingAccName", type: "text", width: "half" },

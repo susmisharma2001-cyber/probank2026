@@ -1,0 +1,37 @@
+# BEGIN WordPress
+# The directives (lines) between "BEGIN WordPress" and "END WordPress" are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+</IfModule>
+# END WordPress
+
+# FAAP REST API CORS Configuration
+<IfModule mod_headers.c>
+    <Location "/wp-json/faap/v1/submit">
+        Header set Access-Control-Allow-Origin "https://form.prominencebank.com"
+        Header set Access-Control-Allow-Methods "POST, OPTIONS, GET"
+        Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-WP-Nonce, Accept, Origin, X-Requested-With"
+        Header set Access-Control-Allow-Credentials "true"
+        Header set Access-Control-Max-Age "86400"
+    </Location>
+    
+    <Location "/wp-json/faap/v1">
+        Header set Access-Control-Allow-Origin "https://form.prominencebank.com"
+        Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+        Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-WP-Nonce, Accept, Origin, X-Requested-With"
+        Header set Access-Control-Allow-Credentials "true"
+    </Location>
+</IfModule>
+
+# Handle preflight OPTIONS requests
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^wp-json/faap/v1 - [L]
+</IfModule>
